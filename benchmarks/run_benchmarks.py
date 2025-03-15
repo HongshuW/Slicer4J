@@ -7,10 +7,10 @@ slicer4j_dir = file_path + os.path.sep + ".." + os.path.sep + "Slicer4J" + os.pa
 dynamic_slicing_core = file_path + os.path.sep + ".." + os.path.sep + ".." + os.path.sep + "DynamicSlicingCore" + os.path.sep
 javaslicer_dir = file_path + os.path.sep + ".." + os.path.sep + ".." + os.path.sep + "javaslicer" + os.path.sep
 
-if not os.path.isdir(javaslicer_dir):
-    print(f'Attempted to look for javaslicer in {javaslicer_dir}')
-    print('Please setup install javaslicer in the parent directory of Slicer4J, or modify its directory in the javaslicer_dir variable')
-    exit(0)
+# if not os.path.isdir(javaslicer_dir):
+#     print(f'Attempted to look for javaslicer in {javaslicer_dir}')
+#     print('Please setup install javaslicer in the parent directory of Slicer4J, or modify its directory in the javaslicer_dir variable')
+#     exit(0)
 
 benchmarks_input = {
     "javaslicer-bench1-intra-procedural" : ("target/javaslicer-bench1-intra-procedural-1.0.0.jar", "Bench 2 ", "Bench", 8),
@@ -110,13 +110,18 @@ def run_slicer4j(project, jar_name, project_arg, extra_libs, sc_file, slice_line
         os.system(f"rm -r {out_dir}")
     os.mkdir(out_dir)
     instr_cmd = f"java -cp \"{slicer4j_dir}/target/slicer4j-jar-with-dependencies.jar:{slicer4j_dir}/target/lib/*\" ca.ubc.ece.resess.slicer.dynamic.slicer4j.Slicer -m i -j {jar_name} -o {out_dir}/ -sl {out_dir}/static-log.log -lc {dynamic_slicing_core}/DynamicSlicingLoggingClasses/DynamicSlicingLogger.jar"
+    
+    print("instrumentation cmd", instr_cmd)
+    
     os.system(instr_cmd)
     instr_time = time.time()
     print(f"Instrumentation time (s): {instr_time-start_instr}")
     instrumented_jar = os.path.basename(jar_name).replace(".jar", "_i.jar")
     cmd = f"java -cp \"{out_dir}/{instrumented_jar}:{extra_libs}\" {project_arg} | grep \"SLICING\" > {out_dir}/trace.log"
     print(f"Running instrumented jar with the following command:")
-    print(cmd)
+    
+    print("run jar cmd", cmd)
+    
     os.system(cmd)
     trace = list()
     with open(f"{out_dir}/trace.log", 'r') as f:
@@ -149,6 +154,9 @@ def run_slicer4j(project, jar_name, project_arg, extra_libs, sc_file, slice_line
         line = sc.split(", ")[0]
     print(f"Slice criterion found: {sc}")
     slice_cmd = f"java -Xmx8g -cp \"{slicer4j_dir}/target/slicer4j-jar-with-dependencies.jar:{slicer4j_dir}/target/lib/*\" ca.ubc.ece.resess.slicer.dynamic.slicer4j.Slicer -j {jar_name} -m s -t {out_dir}/trace.log -o {out_dir}/ -sl {out_dir}/static-log.log -sd {slicer4j_dir}/../models/summariesManual -tw {slicer4j_dir}/../models/EasyTaintWrapperSource.txt -sp {line} -d > {out_dir}/{slice_file}_{line}.log 2>&1"
+    
+    print("slice cmd", slice_cmd)
+
     os.system(slice_cmd)
     slice_time = time.time()
     print(f"Slice time (s): {slice_time-run_time}")
@@ -182,14 +190,14 @@ for idx, project in enumerate(benchmarks_input):
     print(f"====================")
     print(f"Benchmark: {project}")
     build_jar(project)
-    print(f"********************")
-    run_original(project, jar_name, project_arg, "")
+    # print(f"********************")
+    # run_original(project, jar_name, project_arg, "")
     print(f"********************")
     print(f"Running Slicer4J")
     run_slicer4j(project, jar_name, project_arg, "", "", "")
-    print(f"********************")
-    print(f"Running JavaSlicer")
-    run_javaslicer(project, jar_name, project_arg, "", sc_file, slice_line, "main")
+    # print(f"********************")
+    # print(f"Running JavaSlicer")
+    # run_javaslicer(project, jar_name, project_arg, "", sc_file, slice_line, "main")
 
 
 for idx, project in enumerate(defects4j_benchmarks):
@@ -202,11 +210,11 @@ for idx, project in enumerate(defects4j_benchmarks):
     print(f"====================")
     print(f"Benchmark: {project}")
     build_jar(project)
-    print(f"********************")
-    run_original(project, jar_name, project_arg, extra_libs)
+    # print(f"********************")
+    # run_original(project, jar_name, project_arg, extra_libs)
     print(f"********************")
     print(f"Running Slicer4J")
     run_slicer4j(project, jar_name, project_arg, extra_libs, sc_file, slice_line)
-    print(f"********************")
-    print(f"Running JavaSlicer")
-    run_javaslicer(project, jar_name, project_arg, extra_libs, sc_file, slice_line, slice_method)
+    # print(f"********************")
+    # print(f"Running JavaSlicer")
+    # run_javaslicer(project, jar_name, project_arg, extra_libs, sc_file, slice_line, slice_method)
